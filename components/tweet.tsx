@@ -26,7 +26,9 @@ export const Tweet = ({
       </div>
       <div className="flex gap-2">
         <span className="font-bold">
-          <Link href={`/personas/${username.toLowerCase()}`}>{username}</Link>
+          <Link href={`/api/personas/${username.toLowerCase()}`}>
+            {username}
+          </Link>
         </span>
         <span className="text-gray-600">
           <Link href={`/tweets/${id}`}>
