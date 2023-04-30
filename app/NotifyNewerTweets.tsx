@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
+import { mutate } from "swr"
 
 import { useStore } from "@/lib/store"
 import { supabase } from "@/lib/supabase"
@@ -29,6 +30,7 @@ export default function NotifyNewerTweets() {
             (previous && newUpdate.getTime() >= previous.getTime())
           ) {
             setLatestCreatedAt((prev) => prev + 1)
+            mutate((key: any) => key?.[0].startsWith("timeline"))
             previousTimestamp.current = payload.new.created_at
           }
         }
