@@ -6,6 +6,16 @@ import { ThemeProvider } from "next-themes"
 
 import { SiteHeader } from "@/components/site-header"
 import "@/styles/globals.css"
+import { useEffect } from "react"
+import { redirect, useRouter } from "next/navigation"
+import {
+  Session,
+  SessionContextProvider,
+  useUser,
+} from "@supabase/auth-helpers-react"
+
+import { useStore } from "@/lib/store"
+import { supabase } from "@/lib/supabase"
 
 const fontSans = FontSans({
   subsets: ["latin"],
@@ -13,24 +23,97 @@ const fontSans = FontSans({
   display: "swap",
 })
 
-interface LayoutProps {
-  children: React.ReactNode
+// async function getProfile() {
+//   try {
+//     const resp = await fetch("/profile", {
+//       credentials: "include",
+//       headers: {
+//         accept: "application/json",
+//       },
+//     })
+//     if (!resp.ok) {
+//       return router.push("/profile/pick-username")
+//     }
+
+//     const body = await resp.json()
+//     setProfile(body)
+//   } catch (e) {
+//     console.error(e)
+//   }
+// }
+
+const useUserSession = () => {
+  const user = useStore((state) => state.session)
+  const profile = useStore((state) => state.profile)
+  const router = useRouter()
+
+  useEffect(() => {
+    console.log("user", user)
+    console.log("profile", profile)
+    if (user && !profile) {
+      // fetch profile, else redirect to pick username
+      router.push("/profile/pick-username")
+    }
+  }, [user, profile, router])
 }
 
-export function Layout({ children }: LayoutProps) {
+interface LayoutProps {
+  children: React.ReactNode
+  initialSession?: Session
+  profile?: { id: string; username: string } | null
+}
+
+export function Layout({ children, initialSession, profile }: LayoutProps) {
+  const setSession = useStore((state) => state.setSession)
+  const setProfile = useStore((state) => state.setProfile)
+  const logout = useStore((state) => state.logout)
+
+  useEffect(() => {
+    if (profile) {
+      setProfile(profile)
+    }
+  }, [profile, setProfile])
+
+  useEffect(() => {
+    supabase.auth.getSession().then((resp) => {
+      if (!resp.error) {
+        setSession(resp.data.session)
+      } else {
+        logout()
+      }
+    })
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event !== "INITIAL_SESSION") {
+        setSession(session)
+      }
+    })
+
+    return () => subscription.unsubscribe()
+  }, [setSession, logout])
+
+  useUserSession()
+
   return (
     <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-      <Head>
-        <style jsx global>{`
-          :root {
-            --font-sans: ${fontSans.style.fontFamily};
-          }
-        `}</style>
-      </Head>
-      <div className="flex h-full flex-col">
-        <SiteHeader />
-        <main className="flex-1">{children}</main>
-      </div>
+      <SessionContextProvider
+        supabaseClient={supabase}
+        initialSession={initialSession}
+      >
+        <Head>
+          <style jsx global>{`
+            :root {
+              --font-sans: ${fontSans.style.fontFamily};
+            }
+          `}</style>
+        </Head>
+        <div className="flex h-full flex-col">
+          <SiteHeader />
+          <main className="flex-1">{children}</main>
+        </div>
+      </SessionContextProvider>
     </ThemeProvider>
   )
 }

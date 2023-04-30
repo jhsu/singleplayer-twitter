@@ -1,7 +1,9 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import Link from "next/link"
 import { PostgrestResponse } from "@supabase/supabase-js"
+import { DateTime } from "luxon"
 import { suspend } from "suspend-react"
 
 import { useStore } from "@/lib/store"
@@ -43,9 +45,15 @@ export default function Timeline() {
     <>
       {timeline?.map(({ id, username, created_at, content }) => (
         <div key={id} className="border-b p-4">
-          <div>
-            <span className="font-bold">{username}</span>
-            <span className="text-gray-600">{created_at}</span>
+          <div className="flex gap-2">
+            <span className="font-bold">
+              <Link href={`/personas/${username.toLowerCase()}`}>
+                {username}
+              </Link>
+            </span>
+            <span className="text-gray-600">
+              {DateTime.fromISO(created_at).toRelative()}
+            </span>
           </div>
           <div dir="auto">{content}</div>
         </div>

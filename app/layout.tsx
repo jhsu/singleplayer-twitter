@@ -1,6 +1,10 @@
 import { Layout } from "@/components/layout"
 import "@/styles/globals.css"
 import { Source_Sans_Pro } from "next/font/google"
+import { cookies, headers } from "next/headers"
+import { createServerComponentSupabaseClient } from "@supabase/auth-helpers-nextjs"
+
+import { ProfileRow } from "@/lib/types"
 
 const font = Source_Sans_Pro({
   subsets: ["latin"],
@@ -18,10 +22,30 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode
 }) {
+  const supabase = createServerComponentSupabaseClient({
+    headers,
+    cookies,
+  })
+
+  const {
+    data: { session },
+  } = await supabase.auth.getSession()
+
+  const res = session
+    ? await supabase
+        .from("profiles")
+        .select()
+        .eq("id", session.user.id)
+        .limit(1)
+        .single<ProfileRow>()
+    : null
+
   return (
     <html lang="en">
       <body className={font.className}>
-        <Layout>{children}</Layout>
+        <Layout initialSession={session} profile={res?.data}>
+          {children}
+        </Layout>
       </body>
     </html>
   )

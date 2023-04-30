@@ -7,17 +7,15 @@ import useSWRMutation from "swr/mutation"
 import { useStore } from "@/lib/store"
 import { Button } from "@/components/ui/button"
 
-async function publishTweet(
-  key: string,
-  options: { arg: { tweet: string; username: string } }
-) {
-  const { tweet, username } = options.arg
-  return fetch("/tweets", {
+async function publishTweet(key: string, options: { arg: { tweet: string } }) {
+  const { tweet } = options.arg
+  return fetch(key, {
     method: "POST",
+    credentials: "include",
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ tweet, username }),
+    body: JSON.stringify({ tweet }),
   })
 }
 
@@ -26,7 +24,7 @@ const ComposeTweet = () => {
 
   const $form = useRef<HTMLFormElement | null>(null)
 
-  const { trigger, isMutating } = useSWRMutation("/tweets", publishTweet, {
+  const { trigger, isMutating } = useSWRMutation("/api/tweets", publishTweet, {
     onSuccess: () => {
       $form.current?.reset()
       triggerRefresh()
@@ -39,11 +37,8 @@ const ComposeTweet = () => {
         ref={$form}
         onSubmit={(evt) => {
           const data = Object.fromEntries(new FormData(evt.currentTarget))
-          const target = evt.currentTarget
-          console.log("form data", data)
           trigger({
             tweet: data["compose_tweet"] as string,
-            username: data["username"] as string,
           })
           evt.preventDefault()
         }}

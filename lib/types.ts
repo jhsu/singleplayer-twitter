@@ -22,3 +22,8 @@ export interface TweetRow {
   username: string
   content: string
 }
+
+export interface ProfileRow {
+  id: string
+  username: string
+}

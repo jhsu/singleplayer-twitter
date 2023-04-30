@@ -4,10 +4,7 @@ interface SiteConfig {
   name: string
   description: string
   mainNav: NavItem[]
-  links: {
-    twitter: string
-    github: string
-  }
+  links: {}
 }
 
 export const siteConfig: SiteConfig = {
@@ -20,8 +17,5 @@ export const siteConfig: SiteConfig = {
       href: "/",
     },
   ],
-  links: {
-    twitter: "https://twitter.com/jhsu",
-    github: "https://github.com/jhsu",
-  },
+  links: {},
 }
