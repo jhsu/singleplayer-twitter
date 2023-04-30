@@ -29,6 +29,7 @@ const ComposeTweet = ({
   replyTo?: string
   onSuccess?: () => void
 }) => {
+  const session = useStore((state) => state.session)
   const triggerRefresh = useStore((state) => state.triggerRefresh)
 
   const $form = useRef<HTMLFormElement | null>(null)
@@ -40,6 +41,10 @@ const ComposeTweet = ({
       onSuccess?.()
     },
   })
+
+  if (!session) {
+    return null
+  }
 
   return (
     <div className="w-full border border-x-0 border-t-0 p-4">
