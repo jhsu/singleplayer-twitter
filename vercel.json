@@ -1,8 +1,0 @@
-{
-  "crons": [
-    {
-      "path": "/tweets/schedule?key=XiWf4aMJejPXMu.vQK3-",
-      "schedule": "*/5 * * * *"
-    }
-  ]
-}
