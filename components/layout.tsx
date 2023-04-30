@@ -5,6 +5,7 @@ import Head from "next/head"
 import { ThemeProvider } from "next-themes"
 
 import { SiteHeader } from "@/components/site-header"
+import "@/styles/globals.css"
 
 const fontSans = FontSans({
   subsets: ["latin"],
@@ -18,7 +19,7 @@ interface LayoutProps {
 
 export function Layout({ children }: LayoutProps) {
   return (
-    <ThemeProvider>
+    <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
       <Head>
         <style jsx global>{`
           :root {
@@ -26,8 +27,10 @@ export function Layout({ children }: LayoutProps) {
           }
         `}</style>
       </Head>
-      <SiteHeader />
-      <main>{children}</main>
+      <div className="flex h-full flex-col">
+        <SiteHeader />
+        <main className="flex-1">{children}</main>
+      </div>
     </ThemeProvider>
   )
 }

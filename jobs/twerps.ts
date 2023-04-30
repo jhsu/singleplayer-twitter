@@ -3,10 +3,12 @@ import path from "path"
 import { loadEnvConfig } from "@next/env"
 import { PostgrestResponse, createClient } from "@supabase/supabase-js"
 import { Configuration, OpenAIApi } from "openai"
-import pino from "pino"
 
+// import pino from "pino"
+
+import { AIPersona, Tweet, TweetRow } from "@/lib/types"
 import { aiPersonas } from "./personas"
-import { AIPersona, Tweet, TweetRow } from "./types"
+import { TEMPLATE as SYSTEM_TEMPLATE } from "./template"
 
 loadEnvConfig(path.join(__dirname, "../"))
 const configuration = new Configuration({
@@ -19,23 +21,17 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_KEY
 )
 
-const logger = pino({
-  level: process.env.LOG_LEVEL ?? "info",
-  transport: {
-    target: "pino-pretty",
-  },
-})
-
-logger.debug({ supabaseServiceKey: process.env.SUPABASE_SERVICE_KEY }, "env")
-
-/*
-# SECTION FOR TWEET GENERATION
-*/
-// system prompt
-const SYSTEM_TEMPLATE = fs.readFileSync(
-  path.join(__dirname, "./TEMPLATE.md"),
-  "utf8"
-)
+// const logger = pino({
+//   level: process.env.LOG_LEVEL ?? "info",
+//   transport: {
+//     target: "pino-pretty",
+//   },
+// })
+const logger = {
+  debug: (...info) => {},
+  info: console.info,
+  error: console.error,
+}
 
 /**
  * Format the system message to be used in the prompt
@@ -145,7 +141,7 @@ async function getAllRecentTweets() {
 /**
  * Check if the user should tweet based on their tweet frequency and randomness
  */
-async function checkForTweet(): Promise<void> {
+export async function checkForTweet(): Promise<boolean> {
   const now = new Date()
   const history = await getAllRecentTweets()
   // group all recent tweets by username
@@ -157,7 +153,6 @@ async function checkForTweet(): Promise<void> {
     }
     return acc
   }, {} as Record<string, TweetRow[]>)
-  // TODO: Split by instance
   for (const persona of aiPersonas) {
     // const tweets = await getRecentTweets(persona.username)
     const tweets = historyLookup[persona.username] ?? []
@@ -172,6 +167,7 @@ async function checkForTweet(): Promise<void> {
       await postTweet(persona, tweets)
     }
   }
+  return true
 }
 
 /**
@@ -240,5 +236,5 @@ function shouldTweetElapsed(
 }
 
 // Schedule the checkForTweet function to run every 5 minutes
-setInterval(checkForTweet, 5 * 60 * 1000)
-checkForTweet()
+// setInterval(checkForTweet, 5 * 60 * 1000)
+// checkForTweet()

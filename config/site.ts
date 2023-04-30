@@ -7,14 +7,13 @@ interface SiteConfig {
   links: {
     twitter: string
     github: string
-    docs: string
   }
 }
 
 export const siteConfig: SiteConfig = {
-  name: "Next.js",
+  name: "Single-player Twitter",
   description:
-    "Beautifully designed components built with Radix UI and Tailwind CSS.",
+    "If a tweet is made in the forest and no one is around, does it get ratioed?",
   mainNav: [
     {
       title: "Home",
@@ -22,8 +21,7 @@ export const siteConfig: SiteConfig = {
     },
   ],
   links: {
-    twitter: "https://twitter.com/shadcn",
-    github: "https://github.com/shadcn/ui",
-    docs: "https://ui.shadcn.com",
+    twitter: "https://twitter.com/jhsu",
+    github: "https://github.com/jhsu",
   },
 }
