@@ -1,16 +1,11 @@
 import Link from "next/link"
-import { suspend } from "suspend-react"
 
 import { siteConfig } from "@/config/site"
 import { useStore } from "@/lib/store"
-import { supabase } from "@/lib/supabase"
-import { Icons } from "@/components/icons"
 import { MainNav } from "@/components/main-nav"
 import { ThemeToggle } from "@/components/theme-toggle"
-import { buttonVariants } from "@/components/ui/button"
 
 export function SiteHeader() {
-  const session = useStore((state) => state.session)
   const username = useStore((state) => state.profile?.username)
 
   return (

@@ -5,11 +5,12 @@ import {
   // Import predefined theme
   ThemeSupa,
 } from "@supabase/auth-ui-shared"
+import { useTheme } from "next-themes"
 
 import { supabase } from "@/lib/supabase"
-import { Layout } from "@/components/layout"
 
 export default function Page() {
+  const { theme } = useTheme()
   return (
     <div
       className="max-w-lg items-center p-4"
@@ -20,6 +21,7 @@ export default function Page() {
           supabaseClient={supabase}
           appearance={{ theme: ThemeSupa }}
           providers={["google", "twitter"]}
+          theme={theme === "dark" ? "dark" : "default"}
         />
       </div>
     </div>
