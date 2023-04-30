@@ -2,7 +2,6 @@ import { Suspense } from "react"
 import Link from "next/link"
 
 import { siteConfig } from "@/config/site"
-import { useStore } from "@/lib/store"
 import ComposeTweet from "./ComposeTweet"
 import NotifyNewerTweets from "./NotifyNewerTweets"
 import Timeline from "./Timeline"

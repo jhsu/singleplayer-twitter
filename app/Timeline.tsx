@@ -52,7 +52,6 @@ export default function Timeline() {
   )
 
   useEffect(() => {
-    console.log("lastRefresh", lastRefresh)
     if (lastRefresh === null) {
       mutate(undefined, { revalidate: true })
     }
