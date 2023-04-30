@@ -3,8 +3,7 @@ import path from "path"
 import { loadEnvConfig } from "@next/env"
 import { PostgrestResponse, createClient } from "@supabase/supabase-js"
 import { Configuration, OpenAIApi } from "openai"
-
-// import pino from "pino"
+import pino from "pino"
 
 import { AIPersona, Tweet, TweetRow } from "@/lib/types"
 import { aiPersonas } from "./personas"
@@ -21,17 +20,17 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_KEY
 )
 
-// const logger = pino({
-//   level: process.env.LOG_LEVEL ?? "info",
-//   transport: {
-//     target: "pino-pretty",
-//   },
-// })
-const logger = {
-  debug: (...info) => {},
-  info: console.info,
-  error: console.error,
-}
+const logger = pino({
+  level: process.env.LOG_LEVEL ?? "info",
+  transport: {
+    target: "pino-pretty",
+  },
+})
+// const logger = {
+//   debug: (...info) => {},
+//   info: console.info,
+//   error: console.error,
+// }
 
 /**
  * Format the system message to be used in the prompt
@@ -74,7 +73,47 @@ function formatUserPrompt(persona: AIPersona): string {
   } feels like tweeting about their latest thoughts or experiences. The current date is ${new Date().toLocaleDateString()}. Compose a tweet with less than 140 characters. Only return the tweet without quotes.`
 }
 
-async function postTweet(persona: AIPersona, previousTweets: Tweet[]) {
+async function postReply(
+  persona: AIPersona,
+  from: string,
+  tweet: string,
+  options: Partial<TweetRow>
+) {
+  logger.debug(
+    { username: persona.username, tweet },
+    ".replyTweet: Creating prompt to generate tweet"
+  )
+
+  const resp = await openai.createChatCompletion({
+    model: "gpt-3.5-turbo",
+    temperature: 0.5,
+    messages: [
+      { role: "system", content: formatSystemMessage(persona, []) },
+      {
+        role: "user",
+        content: `write a Tweet reply to the tweet by user ${from}: "${tweet}"`,
+        name: persona.username,
+      },
+    ],
+  })
+
+  const reply = resp.data.choices[0]?.message.content.replace(
+    /^["']|["']$/g,
+    ""
+  )
+  logger.info(`.replyTweet [${persona.username}]: ${reply}`)
+  await supabase.from("timeline").insert({
+    ...options,
+    username: persona.username,
+    content: reply,
+  })
+}
+
+async function postTweet(
+  persona: AIPersona,
+  previousTweets: Tweet[],
+  options?: Partial<TweetRow>
+) {
   const userPrompt = formatUserPrompt(persona)
   logger.debug(
     { username: persona.username, prompt: userPrompt },
@@ -83,7 +122,7 @@ async function postTweet(persona: AIPersona, previousTweets: Tweet[]) {
 
   const resp = await openai.createChatCompletion({
     model: "gpt-3.5-turbo",
-    temperature: 0.7,
+    temperature: 0.5,
     messages: [
       { role: "system", content: formatSystemMessage(persona, previousTweets) },
       { role: "user", content: userPrompt, name: persona.username },
@@ -96,6 +135,7 @@ async function postTweet(persona: AIPersona, previousTweets: Tweet[]) {
   )
   logger.info(`.postTweet [${persona.username}]: ${tweet}`)
   await supabase.from("timeline").insert({
+    ...options,
     username: persona.username,
     content: tweet,
   })
@@ -122,6 +162,89 @@ async function getRecentTweets(username: string): Promise<Tweet[]> {
   }
 
   return data as Tweet[]
+}
+
+function summarizePersona(persona: AIPersona): string {
+  return `username: ${persona.username}. ${persona.username} is a ${persona.activity_level} activity level user. Interests: ${persona.interests}, Expertise: ${persona.expertise}, Opininated: ${persona.opinionated_neutral}, Tone: ${persona.tone}.`
+}
+
+async function checkToReply() {
+  logger.debug(".checkToReply")
+
+  // find recent tweets made by the user.
+  // in the future we should let AI respond to AI
+  const recentUserTweets = await supabase
+    .from("timeline")
+    .select()
+    .not("user_id", "is", null)
+    .order("created_at", { ascending: false })
+    .limit(10)
+  const crowd = aiPersonas.map(summarizePersona).join("\n\n")
+
+  for (const tweet of recentUserTweets.data as TweetRow[]) {
+    logger.debug(
+      { tweet: tweet.content },
+      "checking if any persona wants to reply"
+    )
+    const resp = await openai.createChatCompletion({
+      model: "gpt-3.5-turbo",
+      temperature: 0.7,
+      messages: [
+        {
+          role: "system",
+          content: `You are an AI that determines if any user given their personality would likely reply to a tweet. Determine whether a persona might reply based on their persona, but also leave room for chance.
+
+Users:
+${crowd}
+
+---
+
+If any are likely to reply, respond with just their username, if not, respond with "none". Only choose one. The user will give you a tweet.`,
+        },
+        { role: "user", content: tweet.content, name: tweet.username },
+      ],
+    })
+    const respondingUser = resp.data.choices[0].message.content
+    // create tweet
+
+    const respondingPersona = aiPersonas.find(
+      (persona) => persona.username === respondingUser
+    )
+    logger.debug(
+      {
+        user: respondingUser,
+        persona: respondingPersona?.username,
+      },
+      "[checkToReply] respondingUser"
+    )
+
+    if (
+      respondingPersona &&
+      tweet.username.toLowerCase() !== respondingPersona.username.toLowerCase()
+    ) {
+      // ensure the persona hasn't already replied to the tweet
+      const existingReply = await supabase
+        .from("timeline")
+        .select()
+        .eq("reply_to_id", tweet.id)
+        .eq("username", respondingPersona?.username)
+        .limit(1)
+        .maybeSingle()
+      if (existingReply.data) {
+        logger.debug(
+          `${respondingPersona?.username} already replied to ${tweet.id}`
+        )
+        continue
+      }
+
+      await postReply(respondingPersona, tweet.username, tweet.content, {
+        reply_to_id: tweet.id,
+      })
+    }
+  }
+
+  // check if any persona wants to respond to the tweet
+  // summarize all persona
 }
 
 async function getAllRecentTweets() {
@@ -235,6 +358,10 @@ function shouldTweetElapsed(
   return elapsedTime >= tweetFrequencyMs
 }
 
-// Schedule the checkForTweet function to run every 5 minutes
-// setInterval(checkForTweet, 5 * 60 * 1000)
-// checkForTweet()
+const checkLoop = async () => {
+  await checkForTweet()
+  await checkToReply()
+
+  setTimeout(checkLoop, 5 * 60 * 1000)
+}
+checkLoop()

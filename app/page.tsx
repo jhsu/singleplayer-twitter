@@ -45,7 +45,7 @@ const LoadingTimeline = () => {
   )
 }
 
-export default async function IndexPage() {
+export default function IndexPage() {
   return (
     <>
       <section className="container flex h-full flex-col items-center px-0">

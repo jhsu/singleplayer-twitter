@@ -21,6 +21,8 @@ export interface TweetRow {
   created_at: string
   username: string
   content: string
+  user_id?: string | null
+  reply_to_id?: string | null
 }
 
 export interface ProfileRow {

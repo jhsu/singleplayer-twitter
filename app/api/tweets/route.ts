@@ -21,19 +21,24 @@ export async function POST(request: Request) {
     .limit(1)
     .single()
 
-  const { tweet } = await request.json()
+  const { tweet, reply_to_id } = await request.json()
   const username = res.data.username
 
   const result = await supabase.from("timeline").insert({
     content: tweet,
     username,
     user_id: session.session.user.id,
+    reply_to_id,
   })
   return NextResponse.json(
-    { tweet, username, status: result.status, user: session },
+    {
+      tweet,
+      username,
+      reply_to_id,
+    },
     {
       headers: { "content-type": "application/json" },
-      status: result.status >= 300 ? 401 : 200,
+      status: result.status >= 300 ? 401 : 201,
     }
   )
 }

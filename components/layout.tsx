@@ -23,33 +23,12 @@ const fontSans = FontSans({
   display: "swap",
 })
 
-// async function getProfile() {
-//   try {
-//     const resp = await fetch("/profile", {
-//       credentials: "include",
-//       headers: {
-//         accept: "application/json",
-//       },
-//     })
-//     if (!resp.ok) {
-//       return router.push("/profile/pick-username")
-//     }
-
-//     const body = await resp.json()
-//     setProfile(body)
-//   } catch (e) {
-//     console.error(e)
-//   }
-// }
-
 const useUserSession = () => {
   const user = useStore((state) => state.session)
   const profile = useStore((state) => state.profile)
   const router = useRouter()
 
   useEffect(() => {
-    console.log("user", user)
-    console.log("profile", profile)
     if (user && !profile) {
       // fetch profile, else redirect to pick username
       router.push("/profile/pick-username")

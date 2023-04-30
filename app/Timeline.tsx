@@ -9,11 +9,12 @@ import { suspend } from "suspend-react"
 import { useStore } from "@/lib/store"
 import { supabase } from "@/lib/supabase"
 import { TweetRow } from "@/lib/types"
+import { Tweet } from "@/components/tweet"
 
 export async function getRecentTweets() {
   const { data, error }: PostgrestResponse<TweetRow> = await supabase
     .from("timeline")
-    .select("id, username, content, created_at")
+    .select("id, username, content, created_at, reply_to_id, user_id")
     .order("created_at", { ascending: false })
     .limit(10)
   return { data, error }
@@ -43,20 +44,15 @@ export default function Timeline() {
 
   return (
     <>
-      {timeline?.map(({ id, username, created_at, content }) => (
-        <div key={id} className="border-b p-4">
-          <div className="flex gap-2">
-            <span className="font-bold">
-              <Link href={`/personas/${username.toLowerCase()}`}>
-                {username}
-              </Link>
-            </span>
-            <span className="text-gray-600">
-              {DateTime.fromISO(created_at).toRelative()}
-            </span>
-          </div>
-          <div dir="auto">{content}</div>
-        </div>
+      {timeline?.map(({ id, username, created_at, content, reply_to_id }) => (
+        <Tweet
+          key={id}
+          content={content}
+          id={id}
+          replyToId={reply_to_id}
+          createdAt={created_at}
+          username={username}
+        />
       ))}
     </>
   )
