@@ -1,5 +1,6 @@
 "use client"
 
+import Link from "next/link"
 import ComposeTweet from "@/app/ComposeTweet"
 import { DateTime } from "luxon"
 import { clear, suspend } from "suspend-react"
@@ -38,6 +39,11 @@ export default function Page({ params }: { params: { tweetId: string } }) {
     <div className="flex h-full w-full max-w-[980px] flex-col items-center">
       <div className="h-full w-full max-w-2xl border-0 py-4 sm:border sm:border-y-0">
         <div className="p-4">
+          <div className="flex gap-2 text-gray-600">
+            {tweet.reply_to_id && (
+              <Link href={`/tweets/${tweet.reply_to_id}`}>Show thread</Link>
+            )}
+          </div>
           <div className="flex gap-2">
             {tweet.username}{" "}
             <span className="text-gray-600">

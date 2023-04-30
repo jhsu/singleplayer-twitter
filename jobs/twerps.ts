@@ -1,4 +1,3 @@
-import fs from "fs"
 import path from "path"
 import { loadEnvConfig } from "@next/env"
 import { PostgrestResponse, createClient } from "@supabase/supabase-js"
@@ -122,7 +121,7 @@ async function postTweet(
 
   const resp = await openai.createChatCompletion({
     model: "gpt-3.5-turbo",
-    temperature: 0.5,
+    temperature: 0.3,
     messages: [
       { role: "system", content: formatSystemMessage(persona, previousTweets) },
       { role: "user", content: userPrompt, name: persona.username },
@@ -176,9 +175,9 @@ async function checkToReply() {
   const recentUserTweets = await supabase
     .from("timeline")
     .select()
-    .not("user_id", "is", null)
+    // .not("user_id", "is", null)
     .order("created_at", { ascending: false })
-    .limit(10)
+    .limit(20)
   const crowd = aiPersonas.map(summarizePersona).join("\n\n")
 
   for (const tweet of recentUserTweets.data as TweetRow[]) {
