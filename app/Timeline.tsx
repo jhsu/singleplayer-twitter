@@ -34,7 +34,9 @@ const getKey: SWRInfiniteKeyLoader<TweetRow[]> = (index, previousPageData) => {
 }
 
 export default function Timeline() {
-  const timelineLoaded = useStore((state) => state.setTimeline)
+  const timeline = useStore((state) => state.timeline)
+  const appendTimeline = useStore((state) => state.appendTimeline)
+
   const lastRefresh = useStore((state) => state.lastRefresh)
   const [hasMore, setHasMore] = useState(true)
 
@@ -43,7 +45,7 @@ export default function Timeline() {
     getRecentTweets,
     {
       onSuccess(data) {
-        timelineLoaded(data[data.length - 1])
+        appendTimeline(data[data.length - 1])
         if (data[data.length - 1].length < PAGE_SIZE) {
           setHasMore(false)
         }
@@ -60,37 +62,37 @@ export default function Timeline() {
   const sentinel = useRef<HTMLDivElement>()
 
   useEffect(() => {
-    const observer = new IntersectionObserver((entries) => {
-      entries.forEach((entry) => {
-        if (entry.isIntersecting) {
-          setSize((prev) => prev + 1)
-        }
-      })
-    })
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            setSize((prev) => prev + 1)
+          }
+        })
+      },
+      {
+        root: null,
+        rootMargin: "300px",
+      }
+    )
     observer.observe(sentinel.current)
     return () => observer.disconnect()
   }, [setSize])
 
   return (
     <>
-      {data?.map((snapshot, idx) => {
-        return (
-          <div key={idx}>
-            {snapshot.map(
-              ({ id, username, created_at, content, reply_to_id }) => (
-                <Tweet
-                  key={id}
-                  content={content}
-                  id={id}
-                  replyToId={reply_to_id}
-                  createdAt={created_at}
-                  username={username}
-                />
-              )
-            )}
-          </div>
-        )
-      })}
+      <div>
+        {timeline.map(({ id, username, created_at, content, reply_to_id }) => (
+          <Tweet
+            key={id}
+            content={content}
+            id={id}
+            replyToId={reply_to_id}
+            createdAt={created_at}
+            username={username}
+          />
+        ))}
+      </div>
       {hasMore && <div ref={sentinel}></div>}
     </>
   )

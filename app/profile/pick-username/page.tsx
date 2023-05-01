@@ -59,8 +59,13 @@ export default function Page() {
       >
         <Form.Field name="username">
           <Form.Label>Username</Form.Label>
-          <Form.Control asChild disabled={isMutating}>
-            <Input name="username" />
+          <Form.Control
+            asChild
+            disabled={isMutating}
+            placeholder="Enter a username"
+            name="username"
+          >
+            <Input />
           </Form.Control>
           <Button type="submit" disabled={isMutating}>
             Save

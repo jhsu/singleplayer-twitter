@@ -2,6 +2,7 @@ import { Suspense } from "react"
 import Link from "next/link"
 
 import { siteConfig } from "@/config/site"
+import { LoadingBox } from "@/components/ui/skeleton"
 import ComposeTweet from "./ComposeTweet"
 import NotifyNewerTweets from "./NotifyNewerTweets"
 import Timeline from "./Timeline"
@@ -15,13 +16,6 @@ export const metadata = {
   },
 }
 
-const LoadingBox = ({ half }: { half?: boolean }) => {
-  return (
-    <div
-      className={`h-4 rounded bg-gray-800 ${half ? "w-1/2" : "w-full"}`}
-    ></div>
-  )
-}
 const LoadingTimeline = () => {
   return (
     <div className="flex flex-col">

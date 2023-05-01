@@ -65,9 +65,7 @@ export function Layout({ children, initialSession, profile }: LayoutProps) {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event !== "INITIAL_SESSION") {
-        setSession(session)
-      }
+      setSession(session)
     })
 
     return () => subscription.unsubscribe()
@@ -90,7 +88,7 @@ export function Layout({ children, initialSession, profile }: LayoutProps) {
         </Head>
         <div className="flex h-full flex-col">
           <SiteHeader />
-          <main className="flex-1">{children}</main>
+          <main className="flex flex-1 flex-col">{children}</main>
         </div>
       </SessionContextProvider>
     </ThemeProvider>

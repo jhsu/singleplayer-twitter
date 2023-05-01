@@ -30,14 +30,12 @@ const ComposeTweet = ({
   onSuccess?: () => void
 }) => {
   const session = useStore((state) => state.session)
-  const triggerRefresh = useStore((state) => state.triggerRefresh)
 
   const $form = useRef<HTMLFormElement | null>(null)
 
   const { trigger, isMutating } = useSWRMutation("/api/tweets", publishTweet, {
     onSuccess: () => {
       $form.current?.reset()
-      triggerRefresh()
       onSuccess?.()
     },
   })

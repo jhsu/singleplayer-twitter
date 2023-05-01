@@ -1,16 +1,18 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
+import { RealtimePostgresInsertPayload } from "@supabase/supabase-js"
 import { mutate } from "swr"
 
 import { useStore } from "@/lib/store"
 import { supabase } from "@/lib/supabase"
+import { TweetRow } from "@/lib/types"
 import { Button } from "@/components/ui/button"
 
 export default function NotifyNewerTweets() {
   const [latestCreatedAt, setLatestCreatedAt] = useState(0)
-  const previousTimestamp = useRef<string | null>(null)
-  const triggerRefresh = useStore((state) => state.triggerRefresh)
+  const showNewTweets = useStore((state) => state.showNewTweets)
+  const addNewTweet = useStore((state) => state.addNewTweet)
 
   useEffect(() => {
     // Subscribe to the "timeline" table for new inserts
@@ -18,42 +20,35 @@ export default function NotifyNewerTweets() {
       .channel("schema-db-changes")
       .on(
         "postgres_changes",
-        { event: "INSERT", schema: "public" },
-        (payload) => {
+        { event: "INSERT", schema: "public", table: "timeline" },
+        (payload: RealtimePostgresInsertPayload<TweetRow>) => {
+          const tweet = payload.new
+          addNewTweet(tweet)
+          console.log(tweet)
+
           // Update the state with the "created_at" value of the new inserted record
-          const newUpdate = new Date(payload.new.created_at)
-          const previous = previousTimestamp.current
-            ? new Date(previousTimestamp.current)
-            : null
-          if (
-            !previous ||
-            (previous && newUpdate.getTime() >= previous.getTime())
-          ) {
-            setLatestCreatedAt((prev) => prev + 1)
-            mutate((key: any) => key?.[0].startsWith("timeline"))
-            previousTimestamp.current = payload.new.created_at
-          }
+          setLatestCreatedAt((prev) => prev + 1)
+          mutate((key: any) => key?.[0].startsWith("timeline"))
         }
       )
       .subscribe()
 
-    // Clean up the subscription on unmount
-    return () => {
-      subscription.unsubscribe()
-    }
-  }, [])
+    return () => subscription.unsubscribe()
+  }, [addNewTweet])
 
   if (latestCreatedAt === 0) return null
 
   return (
-    <div>
+    <div className="flex justify-center border-b hover:bg-gray-200">
       <Button
+        variant="link"
+        className="w-full"
         onClick={() => {
-          triggerRefresh()
+          showNewTweets()
           setLatestCreatedAt(0)
         }}
       >
-        Show {latestCreatedAt} new tweets
+        Show {latestCreatedAt} tweets
       </Button>
     </div>
   )

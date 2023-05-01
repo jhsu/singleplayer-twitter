@@ -90,7 +90,10 @@ async function postReply(
       { role: "system", content: formatSystemMessage(persona, []) },
       {
         role: "user",
-        content: `write a Tweet reply to the tweet by user ${from}: "${tweet}"`,
+        content: `Author: ${from}
+Tweet: "${tweet}"
+
+Write a reply.`,
         name: persona.username,
       },
     ],
