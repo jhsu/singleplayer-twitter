@@ -66,10 +66,11 @@ export function formatSystemMessage(
   return systemMessage
 }
 
-function formatUserPrompt(persona: AIPersona): string {
-  return `Now, ${
-    persona.username
-  } feels like tweeting about their latest thoughts or experiences. The current date is ${new Date().toLocaleDateString()}. Compose a tweet with less than 140 characters. Only return the tweet without quotes.`
+function formatUserPrompt(
+  persona: AIPersona,
+  sentiment: "positive" | "neutral" | "negative" = "neutral"
+): string {
+  return `Now, ${persona.username} feels like tweeting about their latest thoughts or experiences. Current sentiment is ${sentiment}. Compose a tweet with less than 140 characters. Only return the tweet without quotes.`
 }
 
 async function postReply(
@@ -93,7 +94,7 @@ async function postReply(
         content: `Author: ${from}
 Tweet: "${tweet}"
 
-Write a reply. Only respond with the message.`,
+Write a reply. Only respond with the message and don't include your username or quotes.`,
         name: persona.username,
       },
     ],
@@ -111,12 +112,15 @@ Write a reply. Only respond with the message.`,
   })
 }
 
+const sentimentOptions = ["positive", "neutral", "negative"]
 async function postTweet(
   persona: AIPersona,
   previousTweets: Tweet[],
   options?: Partial<TweetRow>
 ) {
-  const userPrompt = formatUserPrompt(persona)
+  var sentiment =
+    sentimentOptions[Math.floor(Math.random() * sentimentOptions.length)]
+  const userPrompt = formatUserPrompt(persona, sentiment)
   logger.debug(
     { username: persona.username, prompt: userPrompt },
     ".postTweet: Creating prompt to generate tweet"
