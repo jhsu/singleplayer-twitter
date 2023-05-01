@@ -5,8 +5,6 @@ import { createServerComponentSupabaseClient } from "@supabase/auth-helpers-next
 import { ProfileRow } from "@/lib/types"
 import UserProfile from "@/components/users/profile"
 
-export const revalidate = 0
-
 async function getData(username: string) {
   const supabase = createServerComponentSupabaseClient({
     headers,
@@ -41,7 +39,11 @@ export default async function Page({
         <div className="border-b p-8">
           <UserProfile profile={{ username: data?.username ?? username }} />
         </div>
-        <Timeline userId={data?.id} username={username} />
+        <Timeline
+          key={data?.id ?? username}
+          userId={data?.id}
+          username={username}
+        />
       </div>
     </div>
   )

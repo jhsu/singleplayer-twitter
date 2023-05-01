@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react"
 import { PostgrestResponse } from "@supabase/supabase-js"
-import useSWRInfinite, { SWRInfiniteKeyLoader } from "swr/infinite"
+import useSWRInfinite from "swr/infinite"
 
 import { useStore } from "@/lib/store"
 import { supabase } from "@/lib/supabase"
@@ -14,14 +14,12 @@ const PAGE_SIZE = 10
 
 export async function getRecentTweets([
   path,
-  userId,
-  username,
+  [userId, username],
   pageIndex,
   previousPageData,
 ]: [
   key: string,
-  userId: string | null,
-  username: string | null,
+  user: [userId: string | null, username: string | null],
   pageIndex: number,
   previousPageData: TweetRow[]
 ]) {
@@ -54,23 +52,29 @@ export default function Timeline({
   username?: string
 }) {
   const timeline = useStore((state) => state.timeline)
+  const clearTimeline = useStore((state) => state.clearTimeline)
   const appendTimeline = useStore((state) => state.appendTimeline)
 
   const lastRefresh = useStore((state) => state.lastRefresh)
   const [hasMore, setHasMore] = useState(true)
 
+  useEffect(() => {
+    clearTimeline()
+  }, [clearTimeline])
+
   const { data, error, size, setSize, mutate, isLoading } = useSWRInfinite(
     (index, previousPageData) => {
       return [
-        "timeline",
-        userId ?? null,
-        username ?? null,
+        `timeline/${userId}/${username}`,
+        [userId, username],
         index,
         previousPageData,
       ]
     },
     getRecentTweets,
     {
+      revalidateFirstPage: true,
+      revalidateOnMount: true,
       onSuccess(data) {
         appendTimeline(data[data.length - 1])
         if (data[data.length - 1].length < PAGE_SIZE) {

@@ -12,6 +12,7 @@ interface Store {
    */
   addNewTweet: (tweet: TweetRow) => void
   timeline: TweetRow[]
+  clearTimeline: () => void
   lastRefresh: Date | null
   setTimeline: (timeline: TweetRow[]) => void
   showNewTweets: () => void
@@ -47,6 +48,9 @@ export const useStore = create<Store>((set) => ({
 
   setProfile: (profile) => set({ profile }),
 
+  clearTimeline() {
+    set({ timeline: [], lastRefresh: null })
+  },
   setTimeline: (timeline) => {
     set({ timeline, lastRefresh: new Date() })
   },
