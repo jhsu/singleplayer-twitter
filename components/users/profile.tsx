@@ -1,7 +1,7 @@
 export default function UserProfile({
   profile,
 }: {
-  profile: { id: string; username: string }
+  profile: { username: string }
 }) {
   return (
     <div>
