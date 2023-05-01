@@ -8,40 +8,67 @@ import { useStore } from "@/lib/store"
 import { supabase } from "@/lib/supabase"
 import { TweetRow } from "@/lib/types"
 import { Tweet } from "@/components/tweet"
+import { LoadingBox } from "@/components/ui/skeleton"
 
 const PAGE_SIZE = 10
 
-export async function getRecentTweets([path, pageIndex, previousPageData]: [
+export async function getRecentTweets([
+  path,
+  userId,
+  username,
+  pageIndex,
+  previousPageData,
+]: [
   key: string,
+  userId: string | null,
+  username: string | null,
   pageIndex: number,
   previousPageData: TweetRow[]
 ]) {
   if (previousPageData && !previousPageData.length) return []
-
-  const { data, error }: PostgrestResponse<TweetRow> = await supabase
+  let query = supabase
     .from("timeline")
     .select("id, username, content, created_at, reply_to_id, user_id")
     .order("created_at", { ascending: false })
     .range(pageIndex * PAGE_SIZE, (pageIndex + 1) * PAGE_SIZE - 1)
+
+  if (userId) {
+    query = query.eq("user_id", userId)
+  } else if (username) {
+    query = query.ilike("username", username.toLowerCase())
+  }
+
+  const { data, error }: PostgrestResponse<TweetRow> = await query
+
   if (error) {
     throw error
   }
   return data
 }
 
-const getKey: SWRInfiniteKeyLoader<TweetRow[]> = (index, previousPageData) => {
-  return ["timeline", index, previousPageData]
-}
-
-export default function Timeline() {
+export default function Timeline({
+  userId,
+  username,
+}: {
+  userId?: string
+  username?: string
+}) {
   const timeline = useStore((state) => state.timeline)
   const appendTimeline = useStore((state) => state.appendTimeline)
 
   const lastRefresh = useStore((state) => state.lastRefresh)
   const [hasMore, setHasMore] = useState(true)
 
-  const { data, error, size, setSize, mutate } = useSWRInfinite(
-    getKey,
+  const { data, error, size, setSize, mutate, isLoading } = useSWRInfinite(
+    (index, previousPageData) => {
+      return [
+        "timeline",
+        userId ?? null,
+        username ?? null,
+        index,
+        previousPageData,
+      ]
+    },
     getRecentTweets,
     {
       onSuccess(data) {
@@ -92,6 +119,16 @@ export default function Timeline() {
             username={username}
           />
         ))}
+        {isLoading && (
+          <div className="flex flex-col gap-4">
+            <div className="border-b p-4">
+              <LoadingBox />
+            </div>
+            <div className="border-b p-4">
+              <LoadingBox />
+            </div>
+          </div>
+        )}
       </div>
       {hasMore && <div ref={sentinel}></div>}
     </>

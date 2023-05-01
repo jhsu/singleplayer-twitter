@@ -1,8 +1,12 @@
 import { cookies, headers } from "next/headers"
 import { redirect } from "next/navigation"
+import Timeline from "@/app/Timeline"
 import { createServerComponentSupabaseClient } from "@supabase/auth-helpers-nextjs"
 
-export const revalidate = 0
+import { ProfileRow } from "@/lib/types"
+import UserProfile from "@/components/users/profile"
+
+// export const revalidate = 0
 
 async function getData(username: string) {
   const supabase = createServerComponentSupabaseClient({
@@ -12,7 +16,7 @@ async function getData(username: string) {
 
   const result = await supabase
     .from("profiles")
-    .select()
+    .select<"profiles", ProfileRow>()
     .eq("username", username.toLowerCase())
     .limit(1)
     .maybeSingle()
@@ -32,15 +36,14 @@ export default async function Page({
   const { username } = params
   const data = await getData(username)
 
-  if (!data) {
-    redirect("/")
-  }
-
   return (
-    <div>
-      <div>{username}</div>
-      {data.id}
-      {data.username}
+    <div className="flex flex-1 justify-center">
+      <div className="w-full max-w-2xl border-x">
+        <div className="border-b p-8">
+          <UserProfile profile={{ username: data?.username ?? username }} />
+        </div>
+        <Timeline userId={data?.id} username={username} />
+      </div>
     </div>
   )
 }
