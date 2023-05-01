@@ -53,13 +53,13 @@ export default function Timeline({
 }) {
   const timeline = useStore((state) => state.timeline)
   const clearTimeline = useStore((state) => state.clearTimeline)
-  const appendTimeline = useStore((state) => state.appendTimeline)
+  const setTimeline = useStore((state) => state.setTimeline)
 
   const lastRefresh = useStore((state) => state.lastRefresh)
   const [hasMore, setHasMore] = useState(true)
 
   useEffect(() => {
-    clearTimeline()
+    return () => clearTimeline()
   }, [clearTimeline])
 
   const { data, error, size, setSize, mutate, isLoading } = useSWRInfinite(
@@ -76,7 +76,7 @@ export default function Timeline({
       revalidateFirstPage: true,
       revalidateOnMount: true,
       onSuccess(data) {
-        appendTimeline(data[data.length - 1])
+        setTimeline(data.flat())
         if (data[data.length - 1].length < PAGE_SIZE) {
           setHasMore(false)
         }
