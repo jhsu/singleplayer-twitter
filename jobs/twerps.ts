@@ -93,7 +93,7 @@ async function postReply(
         content: `Author: ${from}
 Tweet: "${tweet}"
 
-Write a reply.`,
+Write a reply. Only respond with the message.`,
         name: persona.username,
       },
     ],

@@ -1,12 +1,11 @@
 import { cookies, headers } from "next/headers"
-import { redirect } from "next/navigation"
 import Timeline from "@/app/Timeline"
 import { createServerComponentSupabaseClient } from "@supabase/auth-helpers-nextjs"
 
 import { ProfileRow } from "@/lib/types"
 import UserProfile from "@/components/users/profile"
 
-// export const revalidate = 0
+export const revalidate = 0
 
 async function getData(username: string) {
   const supabase = createServerComponentSupabaseClient({
