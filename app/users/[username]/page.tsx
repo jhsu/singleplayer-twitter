@@ -39,11 +39,7 @@ export default async function Page({
         <div className="border-b p-8">
           <UserProfile profile={{ username: data?.username ?? username }} />
         </div>
-        <Timeline
-          key={data?.id ?? username}
-          userId={data?.id}
-          username={username}
-        />
+        <Timeline userId={data?.id} username={username} />
       </div>
     </div>
   )
