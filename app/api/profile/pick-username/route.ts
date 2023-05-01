@@ -11,13 +11,21 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Not authorized" }, { status: 401 })
   }
 
-  await supabase
+  const result = await supabase
     .from("profiles")
     .upsert({ username: data.username, id: ses.data.session.user.id })
-    .eq("id", ses.data.session.user.id)
+    .select()
+
+  if (result.error) {
+    return NextResponse.json(
+      { error: "Failed to update username" },
+      { status: 400 }
+    )
+  }
 
   return NextResponse.json({
     id: ses.data.session.user.id,
     username: data.username,
+    res: result,
   })
 }

@@ -46,7 +46,7 @@ export default function Page() {
   return (
     <div>
       <Form.Root
-        action="/profile"
+        action="/api/profile/pick-username"
         method="POST"
         onSubmit={(evt) => {
           const data = Object.fromEntries(new FormData(evt.currentTarget))

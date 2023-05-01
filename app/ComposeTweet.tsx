@@ -5,14 +5,15 @@ import * as Form from "@radix-ui/react-form"
 import useSWRMutation from "swr/mutation"
 
 import { useStore } from "@/lib/store"
+import { TweetRow } from "@/lib/types"
 import { Button } from "@/components/ui/button"
 
 async function publishTweet(
   key: string,
   options: { arg: { tweet: string; reply_to_id?: string | null } }
-) {
+): Promise<TweetRow> {
   const { tweet, reply_to_id } = options.arg
-  return fetch(key, {
+  const res = await fetch(key, {
     method: "POST",
     credentials: "include",
     headers: {
@@ -20,6 +21,7 @@ async function publishTweet(
     },
     body: JSON.stringify({ tweet, reply_to_id: reply_to_id }),
   })
+  return res.json()
 }
 
 const ComposeTweet = ({
@@ -34,7 +36,7 @@ const ComposeTweet = ({
   const $form = useRef<HTMLFormElement | null>(null)
 
   const { trigger, isMutating } = useSWRMutation("/api/tweets", publishTweet, {
-    onSuccess: () => {
+    onSuccess: (data) => {
       $form.current?.reset()
       onSuccess?.()
     },

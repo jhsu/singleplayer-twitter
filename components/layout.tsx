@@ -7,12 +7,8 @@ import { ThemeProvider } from "next-themes"
 import { SiteHeader } from "@/components/site-header"
 import "@/styles/globals.css"
 import { useEffect } from "react"
-import { redirect, useRouter } from "next/navigation"
-import {
-  Session,
-  SessionContextProvider,
-  useUser,
-} from "@supabase/auth-helpers-react"
+import { useRouter } from "next/navigation"
+import { Session, SessionContextProvider } from "@supabase/auth-helpers-react"
 
 import { useStore } from "@/lib/store"
 import { supabase } from "@/lib/supabase"

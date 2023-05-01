@@ -2,7 +2,11 @@ import { Layout } from "@/components/layout"
 import "@/styles/globals.css"
 import { Source_Sans_Pro } from "next/font/google"
 import { cookies, headers } from "next/headers"
-import { createServerComponentSupabaseClient } from "@supabase/auth-helpers-nextjs"
+import {
+  Session,
+  SupabaseClient,
+  createServerComponentSupabaseClient,
+} from "@supabase/auth-helpers-nextjs"
 
 import { ProfileRow } from "@/lib/types"
 
@@ -15,6 +19,17 @@ export const metadata = {
   title: "Single-player Twitter",
   description:
     "If a tweet is made in the forest and no one is around, does it get ratioed?",
+}
+
+const getProfile = async (supabase: SupabaseClient, session: Session) => {
+  return session
+    ? await supabase
+        .from("profiles")
+        .select()
+        .eq("id", session.user.id)
+        .limit(1)
+        .single<ProfileRow>()
+    : null
 }
 
 export default async function RootLayout({
@@ -30,15 +45,7 @@ export default async function RootLayout({
   const {
     data: { session },
   } = await supabase.auth.getSession()
-
-  const res = session
-    ? await supabase
-        .from("profiles")
-        .select()
-        .eq("id", session.user.id)
-        .limit(1)
-        .single<ProfileRow>()
-    : null
+  const res = await getProfile(supabase, session)
 
   return (
     <html lang="en">

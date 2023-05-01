@@ -2,6 +2,12 @@ import { NextApiResponse } from "next"
 import { cookies, headers } from "next/headers"
 import { NextResponse } from "next/server"
 import { createRouteHandlerSupabaseClient } from "@supabase/auth-helpers-nextjs"
+import {
+  PostgrestResponse,
+  PostgrestSingleResponse,
+} from "@supabase/supabase-js"
+
+import { TweetRow } from "@/lib/types"
 
 export async function POST(request: Request) {
   const supabase = createRouteHandlerSupabaseClient({
@@ -24,15 +30,18 @@ export async function POST(request: Request) {
   const { tweet, reply_to_id } = await request.json()
   const username = res.data.username
 
-  const result = await supabase.from("timeline").insert({
-    content: tweet,
-    username,
-    user_id: session.session.user.id,
-    reply_to_id,
-  })
+  const result: PostgrestSingleResponse<TweetRow> = await supabase
+    .from("timeline")
+    .insert({
+      content: tweet,
+      username,
+      user_id: session.session.user.id,
+      reply_to_id,
+    })
+
   return NextResponse.json(
     {
-      tweet,
+      content: tweet,
       username,
       reply_to_id,
     },
