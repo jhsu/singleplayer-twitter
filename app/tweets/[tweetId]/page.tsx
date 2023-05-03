@@ -2,6 +2,7 @@
 
 import Link from "next/link"
 import ComposeTweet from "@/app/ComposeTweet"
+import { useAutoAnimate } from "@formkit/auto-animate/react"
 import { DateTime } from "luxon"
 import { clear, suspend } from "suspend-react"
 
@@ -11,6 +12,8 @@ import { Tweet } from "@/components/tweet"
 
 export default function Page({ params }: { params: { tweetId: string } }) {
   const { tweetId } = params
+  const [parent, enableAnimations] = useAutoAnimate()
+
   const result = suspend(
     async () =>
       await supabase
@@ -37,7 +40,7 @@ export default function Page({ params }: { params: { tweetId: string } }) {
 
   return (
     <>
-      <div className="p-4">
+      <div className="p-4" ref={parent}>
         <div className="flex gap-2 text-gray-600">
           {tweet.reply_to_id && (
             <Link href={`/tweets/${tweet.reply_to_id}`}>Show thread</Link>

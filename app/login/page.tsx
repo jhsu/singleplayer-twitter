@@ -22,6 +22,7 @@ export default function Page() {
           appearance={{ theme: ThemeSupa }}
           providers={["google", "twitter"]}
           theme={theme === "dark" ? "dark" : "default"}
+          redirectTo="http://localhost:3000"
         />
       </div>
     </div>

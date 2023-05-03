@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
+import { useAutoAnimate } from "@formkit/auto-animate/react"
 import { PostgrestResponse } from "@supabase/supabase-js"
 import useSWRInfinite from "swr/infinite"
 
@@ -110,9 +111,11 @@ export default function Timeline({
     return () => observer.disconnect()
   }, [setSize])
 
+  const [parent, enableAnimations] = useAutoAnimate(/* optional config */)
+
   return (
     <>
-      <div>
+      <div ref={parent}>
         {timeline.map(({ id, username, created_at, content, reply_to_id }) => (
           <Tweet
             key={id}
