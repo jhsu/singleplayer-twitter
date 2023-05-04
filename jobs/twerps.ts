@@ -19,6 +19,8 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_KEY
 )
 
+type Sentiment = "positive" | "neutral" | "negative"
+
 const logger = pino({
   level: process.env.LOG_LEVEL ?? "info",
   transport: {
@@ -66,11 +68,46 @@ export function formatSystemMessage(
   return systemMessage
 }
 
+/**
+ * Prompt to try and get an interseting tweet from the persona
+ * @param persona
+ * @param sentiment
+ * @returns
+ */
 function formatUserPrompt(
   persona: AIPersona,
-  sentiment: "positive" | "neutral" | "negative" = "neutral"
+  sentiment: Sentiment = "neutral"
 ): string {
-  return `Now, ${persona.username} feels like tweeting about their latest thoughts or experiences. Current sentiment is ${sentiment}. Compose a tweet with less than 140 characters. Only return the tweet without quotes.`
+  return `Pick one of the folling categories to talk about:
+- Personal Life: Tweets about daily activities, personal experiences, hobbies, and interests.
+-News and Current Events: Tweets about local, national, or international news, political developments, and trending topics.
+-Entertainment: Tweets about movies, TV shows, music, celebrities, and pop culture.
+- Travel and Adventure: Tweets about travel destinations, vacation experiences, outdoor adventures, and travel tips.
+- Food and Cooking: Tweets about recipes, cooking tips, restaurant reviews, and food-related experiences.
+- Health and Wellness: Tweets about fitness, nutrition, mental health, wellness tips, and self-care practices.
+- Technology and Gadgets: Tweets about new tech products, software updates, gadget reviews, and technology trends.
+- Education and Learning: Tweets about educational resources, online courses, learning tips, and academic achievements.
+- Humor and Memes: Tweets that share jokes, funny anecdotes, memes, and humorous observations.
+- Inspiration and Motivation: Tweets that share motivational quotes, inspirational stories, and positive affirmations.
+- Pick a random interesting topic and mix it with your interests
+- Have a deep thought
+- Talk about your day
+- Have a hot take to share
+- Complain about something
+- Pick a single word
+- Make a statement
+- Tweet 3 words
+- Make a joke
+- Comment about work
+- Ask a question
+
+---
+
+Compose an message to post online that is different with less than 140 characters that you will post and share with others.
+
+Don't talk about life in general, but be specific. Don't write something that you've talked about before.
+
+Only respond with text without quotes. Do not include hashtags (words that start with '#'). Do not include the category at the beginning of your message.`
 }
 
 async function postReply(
@@ -112,7 +149,7 @@ Write a reply. Only respond with the message and don't include your username or 
   })
 }
 
-const sentimentOptions = ["positive", "neutral", "negative"]
+const sentimentOptions: Sentiment[] = ["positive", "neutral", "negative"]
 async function postTweet(
   persona: AIPersona,
   previousTweets: Tweet[],
@@ -128,7 +165,7 @@ async function postTweet(
 
   const resp = await openai.createChatCompletion({
     model: "gpt-3.5-turbo",
-    temperature: 0.3,
+    temperature: 1,
     messages: [
       { role: "system", content: formatSystemMessage(persona, previousTweets) },
       { role: "user", content: userPrompt, name: persona.username },
@@ -184,7 +221,7 @@ async function checkToReply() {
     .select()
     // .not("user_id", "is", null)
     .order("created_at", { ascending: false })
-    .limit(20)
+    .limit(10)
   const crowd = aiPersonas.map(summarizePersona).join("\n\n")
 
   for (const tweet of recentUserTweets.data as TweetRow[]) {
@@ -194,7 +231,7 @@ async function checkToReply() {
     )
     const resp = await openai.createChatCompletion({
       model: "gpt-3.5-turbo",
-      temperature: 0.7,
+      temperature: 1,
       messages: [
         {
           role: "system",
@@ -366,7 +403,7 @@ function shouldTweetElapsed(
 
 const checkLoop = async () => {
   await checkForTweet()
-  await checkToReply()
+  // await checkToReply()
 
   setTimeout(checkLoop, 5 * 60 * 1000)
 }
