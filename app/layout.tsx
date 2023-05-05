@@ -1,59 +1,59 @@
-import { Layout } from "@/components/layout"
-import "@/styles/globals.css"
-import { Source_Sans_Pro } from "next/font/google"
-import { cookies, headers } from "next/headers"
+import { Layout } from "@/components/layout";
+import "@/styles/globals.css";
+import { Source_Sans_Pro } from "next/font/google";
+import { cookies, headers } from "next/headers";
 import {
-  Session,
-  SupabaseClient,
-  createServerComponentSupabaseClient,
-} from "@supabase/auth-helpers-nextjs"
+	Session,
+	SupabaseClient,
+	createServerComponentSupabaseClient,
+} from "@supabase/auth-helpers-nextjs";
 
-import { ProfileRow } from "@/lib/types"
+import { ProfileRow } from "@/lib/types";
 
 const font = Source_Sans_Pro({
-  subsets: ["latin"],
-  weight: "400",
-})
+	subsets: ["latin"],
+	weight: "400",
+});
 
 export const metadata = {
-  title: "Single-player Twitter",
-  description:
-    "If a tweet is made in the forest and no one is around, does it get ratioed?",
-}
+	title: "Single-player Twitter",
+	description:
+		"If a tweet is made in the forest and no one is around, does it get ratioed?",
+};
 
 const getProfile = async (supabase: SupabaseClient, session: Session) => {
-  return session
-    ? await supabase
-        .from("profiles")
-        .select()
-        .eq("id", session.user.id)
-        .limit(1)
-        .single<ProfileRow>()
-    : null
-}
+	return session
+		? await supabase
+				.from("profiles")
+				.select()
+				.eq("id", session.user.id)
+				.limit(1)
+				.single<ProfileRow>()
+		: null;
+};
 
 export default async function RootLayout({
-  children,
+	children,
 }: {
-  children: React.ReactNode
+	children: React.ReactNode;
 }) {
-  const supabase = createServerComponentSupabaseClient({
-    headers,
-    cookies,
-  })
+	const supabase = createServerComponentSupabaseClient({
+		headers,
+		cookies,
+	});
 
-  const {
-    data: { session },
-  } = await supabase.auth.getSession()
-  const res = await getProfile(supabase, session)
+	const {
+		data: { session },
+	} = await supabase.auth.getSession();
+	const res = await getProfile(supabase, session);
 
-  return (
-    <html lang="en">
-      <body className={font.className}>
-        <Layout initialSession={session} profile={res?.data}>
-          {children}
-        </Layout>
-      </body>
-    </html>
-  )
+	return (
+		<html lang="en">
+			<body className={font.className}>
+				<Layout initialSession={session} profile={res?.data}>
+					{children}
+				</Layout>
+			</body>
+		</html>
+	);
 }
