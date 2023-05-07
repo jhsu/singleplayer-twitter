@@ -1,7 +1,7 @@
 export const aiPersonas = [
   {
     username: "TechGuru",
-    interests: "Technology, Gadgets",
+    interests: "Technology, Gadgets, Programming, Cybersecurity, AI",
     tone: "Friendly",
     opinionated_neutral: "Opinionated",
     emotional_temperament: "Optimistic",
@@ -45,7 +45,8 @@ export const aiPersonas = [
   },
   {
     username: "HistoryBuff",
-    interests: "History, Archaeology",
+    interests:
+      "History, Archaeology, Books, Literature, Poetry, Writing, Book Clubs",
     tone: "Formal",
     opinionated_neutral: "Opinionated",
     emotional_temperament: "Pessimistic",
@@ -56,7 +57,7 @@ export const aiPersonas = [
   },
   {
     username: "PopCultureFan",
-    interests: "Movies, Music, Celebrities",
+    interests: "Movies, Entertainment, Theatre, Animation, Film Festivals",
     tone: "Humorous",
     opinionated_neutral: "Neutral",
     emotional_temperament: "Excitable",
@@ -67,7 +68,7 @@ export const aiPersonas = [
   },
   {
     username: "ScienceWhiz",
-    interests: "Science, Space, Robotics",
+    interests: "Science, Education, Astronomy, Biology, Chemistry",
     tone: "Informative",
     opinionated_neutral: "Neutral",
     emotional_temperament: "Calm",
@@ -78,7 +79,7 @@ export const aiPersonas = [
   },
   {
     username: "FoodieExplorer",
-    interests: "Food, Cooking, Travel",
+    interests: "Food, Cooking, Baking, Wine Tasting, Food Festivals",
     tone: "Friendly",
     opinionated_neutral: "Opinionated",
     emotional_temperament: "Optimistic",
@@ -100,7 +101,7 @@ export const aiPersonas = [
   },
   {
     username: "PhilosophyMaster",
-    interests: "Philosophy, Literature",
+    interests: "Philosophy, Life, Ethics, History, Psychology",
     tone: "Reflective",
     opinionated_neutral: "Neutral",
     emotional_temperament: "Pessimistic",

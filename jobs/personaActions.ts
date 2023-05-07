@@ -1,6 +1,6 @@
 import path from "path";
 import { loadEnvConfig } from "@next/env";
-import { PostgrestResponse, createClient } from "@supabase/supabase-js";
+import { createClient } from "@supabase/supabase-js";
 import { Configuration, OpenAIApi } from "openai";
 import pino from "pino";
 
@@ -41,13 +41,13 @@ const logger = pino({
  */
 export function formatSystemMessage(
 	persona: AIPersona,
-	previousTweets: Tweet[],
+	previousTweets: Tweet[] | null,
 ): string {
 	const variables = {
 		...persona,
 		current_date: new Date().toISOString(),
 		previous_tweets:
-			previousTweets.length > 0
+			(previousTweets?.length ?? 0) > 0
 				? previousTweets.map(
 						(tweet) => `- ${tweet.content} | Tweeted on ${tweet.created_at}`,
 				  )
@@ -150,7 +150,7 @@ Write a reply. Only respond with the message and don't include your username or 
 }
 
 const sentimentOptions: Sentiment[] = ["positive", "neutral", "negative"];
-async function postTweet(
+export async function postTweet(
 	persona: AIPersona,
 	previousTweets: Tweet[],
 	options?: Partial<TweetRow>,
@@ -184,47 +184,16 @@ async function postTweet(
 	});
 }
 
-/*
-# GET CONTEXT
-*/
-
-/**
- * Get the user's recent tweets
- * @param {string} username
- * @returns {Tweet[]}
- */
-async function getRecentTweets(username: string): Promise<Tweet[]> {
-	const { data, error } = await supabase
-		.from("timeline")
-		.select()
-		.order("created_at", { ascending: false })
-		.limit(5);
-
-	if (error) {
-		throw error;
-	}
-
-	return data as Tweet[];
-}
-
 function summarizePersona(persona: AIPersona): string {
 	return `username: ${persona.username}. ${persona.username} is a ${persona.activity_level} activity level user. Interests: ${persona.interests}, Expertise: ${persona.expertise}, Opininated: ${persona.opinionated_neutral}, Tone: ${persona.tone}.`;
 }
 
-async function checkToReply() {
+async function checkToReply(recentUserTweets: TweetRow[]) {
 	logger.debug(".checkToReply");
 
-	// find recent tweets made by the user.
-	// in the future we should let AI respond to AI
-	const recentUserTweets = await supabase
-		.from("timeline")
-		.select()
-		// .not("user_id", "is", null)
-		.order("created_at", { ascending: false })
-		.limit(10);
 	const crowd = aiPersonas.map(summarizePersona).join("\n\n");
 
-	for (const tweet of recentUserTweets.data as TweetRow[]) {
+	for (const tweet of recentUserTweets) {
 		logger.debug(
 			{ tweet: tweet.content },
 			"checking if any persona wants to reply",
@@ -289,122 +258,3 @@ If any are likely to reply, respond with just their username, if not, respond wi
 	// check if any persona wants to respond to the tweet
 	// summarize all persona
 }
-
-async function getAllRecentTweets() {
-	const { data, error }: PostgrestResponse<TweetRow> = await supabase.rpc(
-		"get_latest_timeline_entries",
-	);
-
-	if (error) {
-		logger.error({ error }, "Failed to get all recent tweets");
-		throw error;
-	} else {
-		logger.debug({ data }, "Got all recent tweets");
-		return data;
-	}
-}
-
-/**
- * Check if the user should tweet based on their tweet frequency and randomness
- */
-export async function checkForTweet(): Promise<boolean> {
-	const now = new Date();
-	const history = await getAllRecentTweets();
-	// group all recent tweets by username
-	const historyLookup = history.reduce((acc, curr) => {
-		if (!acc[curr.username]) {
-			acc[curr.username] = [curr];
-		} else {
-			acc[curr.username] = acc[curr.username].concat(curr);
-		}
-		return acc;
-	}, {} as Record<string, TweetRow[]>);
-	for (const persona of aiPersonas) {
-		// const tweets = await getRecentTweets(persona.username)
-		const tweets = historyLookup[persona.username] ?? [];
-		const lastTweetTime = tweets[0]?.created_at
-			? new Date(tweets[0]?.created_at)
-			: null;
-		const shouldPost =
-			shouldTweetFrequency(persona) ||
-			shouldTweetElapsed(persona, lastTweetTime, now);
-
-		if (shouldPost) {
-			await postTweet(persona, tweets);
-		}
-	}
-	return true;
-}
-
-/**
- * Determine if the user should tweet based on their tweet frequency and randomness
- * @params {AIPersona} persona
- */
-function shouldTweetFrequency(persona: AIPersona): boolean {
-	const randomNumber = Math.random();
-	let probability: number;
-
-	switch (persona.activity_level) {
-		case "High":
-			probability = 0.8;
-			break;
-		case "Medium":
-			probability = 0.5;
-			break;
-		case "Low":
-			probability = 0.2;
-			break;
-		default:
-			probability = 0;
-	}
-	logger.debug(
-		{ username: persona.username, probability },
-		randomNumber < probability
-			? "Frequency check passed"
-			: "Frequency check failed",
-	);
-
-	return randomNumber < probability;
-}
-
-function shouldTweetElapsed(
-	persona: AIPersona,
-	lastTweetDate: Date | null,
-	currentDate: Date,
-): boolean {
-	const elapsedTime = lastTweetDate
-		? currentDate.getTime() - lastTweetDate.getTime()
-		: Infinity;
-	let tweetFrequencyMs: number;
-
-	switch (persona.activity_level) {
-		case "High":
-			tweetFrequencyMs = 1 * 60 * 60 * 1000; // 1 hours
-			break;
-		case "Medium":
-			tweetFrequencyMs = 2 * 60 * 60 * 1000; // 2 hours
-			break;
-		case "Low":
-			tweetFrequencyMs = 4 * 60 * 60 * 1000; // 4 hours
-			break;
-		default:
-			tweetFrequencyMs = Number.MAX_VALUE;
-	}
-
-	logger.debug(
-		{ username: persona.username, elapsedTime },
-		elapsedTime >= tweetFrequencyMs
-			? "Elasped tweet time"
-			: "Did not elapse tweet time",
-	);
-
-	return elapsedTime >= tweetFrequencyMs;
-}
-
-const checkLoop = async () => {
-	await checkForTweet();
-	// await checkToReply()
-
-	setTimeout(checkLoop, 5 * 60 * 1000);
-};
-checkLoop();
