@@ -27,11 +27,9 @@ const logger = pino({
 		target: "pino-pretty",
 	},
 });
-// const logger = {
-//   debug: (...info) => {},
-//   info: console.info,
-//   error: console.error,
-// }
+
+const childLogger = (persona: AIPersona) =>
+	logger.child({ persona: persona.username });
 
 /**
  * Format the system message to be used in the prompt
@@ -43,6 +41,7 @@ export function formatSystemMessage(
 	persona: AIPersona,
 	previousTweets: Tweet[] | null,
 ): string {
+	const log = childLogger(persona);
 	const variables = {
 		...persona,
 		current_date: new Date().toISOString(),
@@ -61,7 +60,7 @@ export function formatSystemMessage(
 			return value ? value : match;
 		},
 	);
-	logger.debug(
+	log.debug(
 		{ username: persona.username, systemMessage },
 		"Formatted system message",
 	);
@@ -116,7 +115,8 @@ async function postReply(
 	tweet: string,
 	options: Partial<TweetRow>,
 ) {
-	logger.debug(
+	const log = childLogger(persona);
+	log.debug(
 		{ username: persona.username, tweet },
 		".replyTweet: Creating prompt to generate tweet",
 	);
@@ -141,7 +141,7 @@ Write a reply. Only respond with the message and don't include your username or 
 		/^["']|["']$/g,
 		"",
 	);
-	logger.info(`.replyTweet [${persona.username}]: ${reply}`);
+	log.info(`.replyTweet: ${reply}`);
 	await supabase.from("timeline").insert({
 		...options,
 		username: persona.username,
@@ -155,11 +155,12 @@ export async function postTweet(
 	previousTweets: Tweet[],
 	options?: Partial<TweetRow>,
 ) {
+	const log = childLogger(persona);
 	const sentiment =
 		sentimentOptions[Math.floor(Math.random() * sentimentOptions.length)];
 	const userPrompt = formatUserPrompt(persona, sentiment);
-	logger.debug(
-		{ username: persona.username, prompt: userPrompt },
+	log.debug(
+		{ prompt: userPrompt },
 		".postTweet: Creating prompt to generate tweet",
 	);
 
@@ -176,7 +177,7 @@ export async function postTweet(
 		/^["']|["']$/g,
 		"",
 	);
-	logger.info(`.postTweet [${persona.username}]: ${tweet}`);
+	log.info(`.postTweet: ${tweet}`);
 	await supabase.from("timeline").insert({
 		...options,
 		username: persona.username,
@@ -188,16 +189,18 @@ function summarizePersona(persona: AIPersona): string {
 	return `username: ${persona.username}. ${persona.username} is a ${persona.activity_level} activity level user. Interests: ${persona.interests}, Expertise: ${persona.expertise}, Opininated: ${persona.opinionated_neutral}, Tone: ${persona.tone}.`;
 }
 
-async function checkToReply(recentUserTweets: TweetRow[]) {
+export async function checkToReply(recentUserTweets: TweetRow[]) {
 	logger.debug(".checkToReply");
 
 	const crowd = aiPersonas.map(summarizePersona).join("\n\n");
 
 	for (const tweet of recentUserTweets) {
-		logger.debug(
-			{ tweet: tweet.content },
-			"checking if any persona wants to reply",
-		);
+		const log = logger.child({
+			tweet: tweet.id,
+			username: tweet.username,
+			user_id: tweet.user_id,
+		});
+		log.debug("checking if any persona wants to reply");
 		const resp = await openai.createChatCompletion({
 			model: "gpt-3.5-turbo",
 			temperature: 1,
@@ -222,9 +225,9 @@ If any are likely to reply, respond with just their username, if not, respond wi
 		const respondingPersona = aiPersonas.find(
 			(persona) => persona.username === respondingUser,
 		);
-		logger.debug(
+		log.debug(
 			{
-				user: respondingUser,
+				responding_user: respondingUser,
 				persona: respondingPersona?.username,
 			},
 			"[checkToReply] respondingUser",
@@ -243,7 +246,7 @@ If any are likely to reply, respond with just their username, if not, respond wi
 				.limit(1)
 				.maybeSingle();
 			if (existingReply.data) {
-				logger.debug(
+				log.debug(
 					`${respondingPersona?.username} already replied to ${tweet.id}`,
 				);
 				continue;
