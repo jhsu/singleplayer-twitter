@@ -83,6 +83,7 @@ aiPersonas.forEach(function checkAndTweet(persona) {
 			setTimeout(
 				postTweet,
 				1000 * (Math.random() * 10),
+				persona,
 				await repository.recentTweets(persona.username),
 			);
 		} else {
