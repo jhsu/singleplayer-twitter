@@ -11,10 +11,16 @@ interface IRead<T> {
 	find(uuid: string): Promise<T>;
 }
 abstract class BaseRepository<T> implements IWrite<T>, IRead<T> {
-	public readonly _table: ReturnType<SupabaseClient["from"]>;
+	// public readonly _table: ReturnType<SupabaseClient["from"]>;
+	public readonly _tableName: string;
+	private readonly _db: SupabaseClient;
 
 	constructor(db: SupabaseClient, tableName: string) {
-		this._table = db.from(tableName);
+		this._tableName = tableName;
+		this._db = db;
+	}
+	get _table() {
+		return this._db.from(this._tableName);
 	}
 	async update(uuid: string, data: Record<string, unknown>): Promise<boolean> {
 		const { error } = await this._table.update(data).eq("id", uuid);
@@ -45,15 +51,14 @@ abstract class BaseRepository<T> implements IWrite<T>, IRead<T> {
 
 export class TweetsRepository extends BaseRepository<TweetRow> {
 	// need to change this to persona_id eventually
-	async recentTweet(userName: string): Promise<Pick<TweetRow, "created_at">> {
+	async recentTweet(userName: string) {
 		const { data, error } = await this._table
 			.select("created_at")
-			// .eq("personal_id", personaId)
 			.eq("username", userName)
 			.order("created_at", { ascending: false })
 			.limit(1)
 			.single();
-		return data;
+		return { data, error };
 	}
 
 	async recentTweets(userName: string): Promise<TweetRow[]> {

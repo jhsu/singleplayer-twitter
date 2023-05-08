@@ -39,9 +39,12 @@ const repository = new TweetsRepository(supabase, "timeline");
 const shouldTweet = async (persona: AIPersona): Promise<boolean> => {
 	const pLogger = logger.child({ persona: persona.username });
 
-	const result = await repository.recentTweet(persona.username);
+	pLogger.debug("checking if persona should tweet");
+	const { data: result, error } = await repository.recentTweet(
+		persona.username,
+	);
 	if (!result) {
-		pLogger.debug("no recent tweet, user should tweet");
+		pLogger.debug({ result }, "no recent tweet, user should tweet");
 		return true;
 	}
 
@@ -82,7 +85,7 @@ aiPersonas.forEach(function checkAndTweet(persona) {
 			);
 			setTimeout(
 				postTweet,
-				1000 * (Math.random() * 10),
+				1000 * Math.floor(Math.pow(100, Math.random())),
 				persona,
 				await repository.recentTweets(persona.username),
 			);
@@ -102,7 +105,11 @@ const subscription = supabase
 		{ event: "INSERT", schema: "public", table: "timeline" },
 		(payload: RealtimePostgresInsertPayload<TweetRow>) => {
 			// check for possible reply
-			setTimeout(checkToReply, 1000 * 60, [payload.new]);
+			logger.debug({ payload }, "saw tweet, will check to reply");
+			if (Math.random() > 0.5) {
+				logger.debug("passed chance check, will try and reply");
+				setTimeout(checkToReply, 1000 * 30, [payload.new]);
+			}
 		},
 	)
 	.subscribe();

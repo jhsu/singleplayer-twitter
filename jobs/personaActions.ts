@@ -77,7 +77,7 @@ function formatUserPrompt(
 	persona: AIPersona,
 	sentiment: Sentiment = "neutral",
 ): string {
-	return `Pick one of the folling categories to talk about:
+	return `Possible generic tweet topics:
 - Personal Life: Tweets about daily activities, personal experiences, hobbies, and interests.
 -News and Current Events: Tweets about local, national, or international news, political developments, and trending topics.
 -Entertainment: Tweets about movies, TV shows, music, celebrities, and pop culture.
@@ -102,11 +102,7 @@ function formatUserPrompt(
 
 ---
 
-Compose an message to post online that is different with less than 140 characters that you will post and share with others.
-
-Don't talk about life in general, but be specific. Don't write something that you've talked about before.
-
-Only respond with text without quotes. Do not include hashtags (words that start with '#'). Do not include the category at the beginning of your message.`;
+Write a tweet that is up to 140 characters or less without including the topic or any hastags. Don't write something that you've talked about before.`;
 }
 
 async function postReply(
@@ -197,10 +193,11 @@ export async function checkToReply(recentUserTweets: TweetRow[]) {
 	for (const tweet of recentUserTweets) {
 		const log = logger.child({
 			tweet: tweet.id,
-			username: tweet.username,
-			user_id: tweet.user_id,
+			tweet_username: tweet.username,
+			tweet_user_id: tweet.user_id,
 		});
 		log.debug("checking if any persona wants to reply");
+		// apply some chance
 		const resp = await openai.createChatCompletion({
 			model: "gpt-3.5-turbo",
 			temperature: 1,
