@@ -86,6 +86,19 @@ export interface Database {
           created_at: string
         }[]
       }
+      get_tweet_tree: {
+        Args: {
+          tweet_id: string
+        }
+        Returns: {
+          id: string
+          reply_to_id: string
+          username: string
+          content: string
+          created_at: string
+          user_id: string
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never

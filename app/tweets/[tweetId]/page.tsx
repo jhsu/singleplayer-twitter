@@ -14,29 +14,35 @@ export default function Page({ params }: { params: { tweetId: string } }) {
 	const { tweetId } = params;
 	const [parent, enableAnimations] = useAutoAnimate();
 
-	const result = suspend(
-		async () =>
-			await supabase
-				.from("timeline")
-				.select<"timeline", TweetRow>()
-				.eq("id", tweetId)
-				.limit(1)
-				.single(),
-		[tweetId, "tweet"],
-	);
+	const thread = suspend(async () => {
+		return await supabase.rpc("get_tweet_tree", { tweet_id: tweetId });
+	}, ["tweet", tweetId]);
 
-	const replies = suspend(
-		async () =>
-			await supabase
-				.from("timeline")
-				.select<"timeline", TweetRow>()
-				.eq("reply_to_id", tweetId)
-				.order("created_at", { ascending: false })
-				.limit(10),
-		[tweetId, "replies"],
-	);
+	// const result = suspend(
+	// 	async () =>
+	// 		await supabase
+	// 			.from("timeline")
+	// 			.select<"timeline", TweetRow>()
+	// 			.eq("id", tweetId)
+	// 			.limit(1)
+	// 			.single(),
+	// 	[tweetId, "tweet"],
+	// );
 
-	const tweet = result.data;
+	// const replies = suspend(
+	// 	async () =>
+	// 		await supabase
+	// 			.from("timeline")
+	// 			.select<"timeline", TweetRow>()
+	// 			.eq("reply_to_id", tweetId)
+	// 			.order("created_at", { ascending: false })
+	// 			.limit(10),
+	// 	[tweetId, "replies"],
+	// );
+
+	// const tweet = result.data;
+	const [tweet, ...replies] = thread.data;
+	// TODO: need to organize replies into a tree
 
 	return (
 		<>
@@ -60,7 +66,7 @@ export default function Page({ params }: { params: { tweetId: string } }) {
 				onSuccess={() => clear([tweetId, "replies"])}
 			/>
 
-			{replies.data.map((tweet) => {
+			{replies.map((tweet) => {
 				return (
 					<Tweet
 						key={tweet.id}
